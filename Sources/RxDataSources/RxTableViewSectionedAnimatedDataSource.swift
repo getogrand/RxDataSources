@@ -114,6 +114,26 @@ open class RxTableViewSectionedAnimatedDataSource<Section: AnimatableSectionMode
                                 tableView.endUpdates()
                             }
                         }
+
+                    case .nonAnimated:
+                      // each difference must be run in a separate 'performBatchUpdates', otherwise it crashes.
+                      // this is a limitation of Diff tool
+                      for difference in differences {
+                        let updateBlock = {
+                          // sections must be set within updateBlock in 'performBatchUpdates'
+                          dataSource.setSections(difference.finalSections)
+                          tableView.batchUpdates(difference, animationConfiguration: dataSource.animationConfiguration)
+                        }
+                        UIView.performWithoutAnimation {
+                          if #available(iOS 11, tvOS 11, *) {
+                            tableView.performBatchUpdates(updateBlock, completion: nil)
+                          } else {
+                            tableView.beginUpdates()
+                            updateBlock()
+                            tableView.endUpdates()
+                          }
+                        }
+                      }
                         
                     case .reload:
                         dataSource.setSections(newSections)

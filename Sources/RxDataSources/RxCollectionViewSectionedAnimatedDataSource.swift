@@ -82,6 +82,20 @@ open class RxCollectionViewSectionedAnimatedDataSource<Section: AnimatableSectio
                             }
                             collectionView.performBatchUpdates(updateBlock, completion: nil)
                         }
+
+                    case .nonAnimated:
+                      // each difference must be run in a separate 'performBatchUpdates', otherwise it crashes.
+                      // this is a limitation of Diff tool
+                      for difference in differences {
+                        let updateBlock = {
+                          // sections must be set within updateBlock in 'performBatchUpdates'
+                          dataSource.setSections(difference.finalSections)
+                          collectionView.batchUpdates(difference, animationConfiguration: dataSource.animationConfiguration)
+                        }
+                        UIView.performWithoutAnimation {
+                          collectionView.performBatchUpdates(updateBlock, completion: nil)
+                        }
+                      }
                         
                     case .reload:
                         dataSource.setSections(newSections)
